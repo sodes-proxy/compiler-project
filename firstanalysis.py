@@ -1,16 +1,77 @@
 from pprint import pprint
+import os
 
-RESERVED = {"bool":1, "break":1, "case":1, "char":1, "class":1, "const":1,"continue":1, "default":1, "do":1, "double":1, "else":1, 
-            "enum":1, "float":1, "for":1, "if":1, "int":1, "long":1, "main":1, "namespace":1, "new":1, "or":1, "private":1, "protected":1, 
-            "public":1, "return":1, "short":1, "signed":1, "sizeof":1, "static":1, "struct":1, "switch":1, "this":1, "unsigned":1,
-            "using":1, "void":1, "while":1, "#include":1}
-LOGIC = {"==":1, "!=":1, ">":1, "<":1, ">=":1, "<=":1, "&&":1, "||":1, "!":1}
-OPERATOR = {"=":1, "+":1, "-":1, "/":1, "*":1, "%":1, "+=":1, "-=":1, "/=":1, "*=":1, "++":1, "--":1}
-BLOCK = {"(":1, ")":1, "{":1, "}":1, "[":1, "]":1}
-LITERAL = {"\"":1, "\'":1}
-SEPARATORS = {";":1, ",":1, ":":1}
+from sqlalchemy import false
 
-variable_table = {'identifier':[], 'reserved':[], 'logic':[], 'operator':[], 'block':[], 'literal':[], 'separator':[], 'number':[]}
+RESERVED = {
+    "constantes": 1,
+    "variables": 1,
+    "real": 1,
+    "alfabetico": 1,
+    "logico": 1,
+    "entero": 1,
+    "funcion": 1,
+    "inicio": 1,
+    "fin": 1,
+    "de": 1,
+    "procedimiento": 1,
+    "regresa": 1,
+    "si": 1,
+    "hacer": 1,
+    "sino": 1,
+    "cuando": 1,
+    "el": 1,
+    "valor": 1,
+    "sea": 1,
+    "otro": 1,
+    "desde": 1,
+    "hasta": 1,
+    "incr": 1,
+    "decr": 1,
+    "repetir": 1,
+    "que": 1,
+    "mientras": 1,
+    "se": 1,
+    "cumpla": 1,
+    "continua": 1,
+    "interrumpe": 1,
+    "limpia": 1,
+    "lee": 1,
+    "imprime": 1,
+    "imprimenl": 1,
+    "verdadero": 1,
+    "falso": 1,
+}
+LOGIC = {"==": 1, "!=": 1, ">": 1, "<": 1, ">=": 1, "<=": 1, "&&": 1, "||": 1, "!": 1}
+OPERATOR = {
+    ":=": 1,
+    "+": 1,
+    "-": 1,
+    "/": 1,
+    "*": 1,
+    "%": 1,
+    "+=": 1,
+    "-=": 1,
+    "/=": 1,
+    "*=": 1,
+    "++": 1,
+    "--": 1,
+}
+BLOCK = {"(": 1, ")": 1, "{": 1, "}": 1, "[": 1, "]": 1}
+LITERAL = {'"': 1, "'": 1}
+SEPARATORS = {";": 1, ",": 1, ":": 1}
+
+variable_table = {
+    "identifier": [],
+    "reserved": [],
+    "logic": [],
+    "operator": [],
+    "block": [],
+    "literal": [],
+    "separator": [],
+    "number": [],
+}
+
 
 def get_word(symbol, line, position):
     """Searches for the end of a literal.
@@ -29,9 +90,12 @@ def get_word(symbol, line, position):
     count = 0
     for pos, char in enumerate(line[position:]):
         word += char
-        if char == symbol: count += 1
-        if count == 2: return word, position + pos + 1
+        if char == symbol:
+            count += 1
+        if count == 2:
+            return word, position + pos + 1
     return word, len(line)
+
 
 def get_number(line, position):
     """Searches for the end of a number.
@@ -47,9 +111,12 @@ def get_number(line, position):
 
     word = ""
     for pos, char in enumerate(line[position:]):
-        if char.isdigit() or char == ".": word += char
-        else: return word, position + pos
+        if char.isdigit() or char == ".":
+            word += char
+        else:
+            return word, position + pos
     return word, len(line)
+
 
 def is_from(category, symbol):
     """Checks if the symbol is from the category given.
@@ -61,12 +128,13 @@ def is_from(category, symbol):
     Returns:
         bool: Whether the symbol is part of the category given.
     """
-    
+
     try:
         category[symbol]
         return True
     except:
         return False
+
 
 def categorize(symbol):
     """Checks the category of a word or symbol.
@@ -84,14 +152,21 @@ def categorize(symbol):
     except:
         category = "identifier"
 
-    if is_from(RESERVED, symbol): category = "reserved"
-    elif is_from(LOGIC, symbol): category = "logic"
-    elif is_from(OPERATOR, symbol): category = "operator"
-    elif is_from(BLOCK, symbol): category = "block"
-    elif is_from(LITERAL, symbol[0]): category = "literal"
-    elif is_from(SEPARATORS, symbol): category = "separator"
-        
+    if is_from(RESERVED, symbol):
+        category = "reserved"
+    elif is_from(LOGIC, symbol):
+        category = "logic"
+    elif is_from(OPERATOR, symbol):
+        category = "operator"
+    elif is_from(BLOCK, symbol):
+        category = "block"
+    elif is_from(LITERAL, symbol[0]):
+        category = "literal"
+    elif is_from(SEPARATORS, symbol):
+        category = "separator"
+
     return category
+
 
 def read_next(line, position):
     """Reads the next word from the line.
@@ -116,7 +191,10 @@ def read_next(line, position):
                     total_pos += temp_pos
                     break
             break
-        elif char == "\n" or (char == "/" and line[global_pos+1] == "/"):
+        elif char == "\n" or (char == "/" and line[global_pos + 1] == "/"):
+            total_pos = len(line)
+            break
+        elif char == "\t":
             total_pos = len(line)
             break
         else:
@@ -126,14 +204,15 @@ def read_next(line, position):
                     total_pos += 1
                 break
             elif is_from(LITERAL, char):
-                if word == "": word, total_pos = get_word(char, line, global_pos)
+                if word == "":
+                    word, total_pos = get_word(char, line, global_pos)
                 break
             elif is_from(OPERATOR, char):
                 if word == "":
                     word = char
                     total_pos += 1
-                    temp_word = char + line[global_pos+1]
-                    if is_from(OPERATOR, temp_word) or is_from(LOGIC, temp_word): 
+                    temp_word = char + line[global_pos + 1]
+                    if is_from(OPERATOR, temp_word) or is_from(LOGIC, temp_word):
                         word = temp_word
                         total_pos += 2
                 break
@@ -141,27 +220,48 @@ def read_next(line, position):
                 if word == "":
                     word = char
                     total_pos += 1
-                    temp_word = char + line[global_pos+1]
-                    if is_from(LOGIC, temp_word): 
+                    temp_word = char + line[global_pos + 1]
+                    if is_from(LOGIC, temp_word):
                         word = temp_word
                         total_pos += 2
                 break
             elif char.isdigit():
-                if word == "": 
+                if word == "":
                     word, total_pos = get_number(line, global_pos)
                     break
-                elif not categorize(word) == "identifier": break
+                elif not categorize(word) == "identifier":
+                    break
         word += char
     return word, total_pos
 
-code = open("Input.txt", "r").read().split("\n")
+
+def write_files(table):
+    """writes files with the corresponding tables.
+
+    Args:
+        table (dict): Table containing all variables and identifiers.
+
+    Returns:
+        None
+    """
+    if not os.path.exists("./classifiers"):
+        os.makedirs("./classifiers")
+    for key in table.keys():
+        with open(f"classifiers/{key}", "w") as f:
+            for element in table[key]:
+                f.write(f"{element}\n")
+
+
+code = open("prueba.up", "r").read().split("\n")
 code = [line + "\n" for line in code]
 for line in code:
     pos = 0
     while not pos == len(line):
         word, pos = read_next(line, pos)
-        if not word == "": variable_table[categorize(word)].append(word)
+        if not word == "":
+            variable_table[categorize(word)].append(word)
 
 for key in variable_table.keys():
     print(key.capitalize())
     pprint(variable_table[key])
+write_files(variable_table)
