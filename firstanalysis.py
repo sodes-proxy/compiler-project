@@ -1,8 +1,8 @@
 from pprint import pprint
 import os
-
-from sqlalchemy import false
-
+import re
+#^(?i)constantes .+:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n(.*:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n)*\n*^(?i)variables (.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)*(((?i)funcion .+\(.+:.+\):.+;\n)*((?i)procedimiento .+\(.+:.+\);\n)*)*
+RULES = ["^(?i)constantes .+:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n(.*:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n)*\n*^(?i)variables (.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)*(((?i)funcion .+\(.+:.+\):.+;\n)*((?i)procedimiento .+\(.+:.+\);\n)*)*"]
 RESERVED = {
     "constantes": 1,
     "variables": 1,
@@ -71,6 +71,7 @@ variable_table = {
     "separator": [],
     "number": [],
 }
+variable_types={"Alfabetico":"idk","Logico":"idk","Entero":"idk","Real":"idk"}
 
 
 def get_word(symbol, line, position):
@@ -235,6 +236,18 @@ def read_next(line, position):
     return word, total_pos
 
 
+def rule_validation(line, pos):
+    #! ^constantes .+:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n(.*:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n)*\n* regex para bloque constantes
+    #! ^variables (.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)* ^variables (.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)* regex para bloque variables (despues de ":" va tipo de variable)
+    #! (((?i)funcion .+\(.+:.+\):.+;\n)*((?i)procedimiento .+\(.+:.+\);\n)*)* regex para bloque de protFuncionProc (despues de ":" va tipo de variable)
+    for rule in RULES:
+        line_check = re.search(rule, line)
+        if line_check:
+            return True
+        else:
+            return False
+
+
 def write_files(table):
     """writes files with the corresponding tables.
 
@@ -252,16 +265,20 @@ def write_files(table):
                 f.write(f"{element}\n")
 
 
-code = open("prueba.up", "r").read().split("\n")
+code = open("examen.up", "r").read().split("\n")
 code = [line + "\n" for line in code]
 for line in code:
     pos = 0
+    if rule_validation(line, pos):
+        print("thx")
+        pass
     while not pos == len(line):
         word, pos = read_next(line, pos)
+        if word == "constantes":
         if not word == "":
             variable_table[categorize(word)].append(word)
 
-for key in variable_table.keys():
-    print(key.capitalize())
-    pprint(variable_table[key])
-write_files(variable_table)
+# for key in variable_table.keys():
+#    print(key.capitalize())
+#    pprint(variable_table[key])
+# write_files(variable_table)
