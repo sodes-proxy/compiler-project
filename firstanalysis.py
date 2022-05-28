@@ -1,7 +1,9 @@
 from pprint import pprint
 import os
 import re
-#^(?i)constantes .+:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n(.*:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n)*\n*^(?i)variables (.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)*(((?i)funcion .+\(.+:.+\):.+;\n)*((?i)procedimiento .+\(.+:.+\);\n)*)*
+#TODO agregar reglas para las funciones de (si,cuando,imprime,lee,sea,otro,hasta que,regresa,desde)
+#TODO remover comentarios por que no se poner el caso de ignorar en regex 
+#!^(?i)constantes .+:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n(.*:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n)*\n*^(?i)variables (.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)*(((?i)funcion .+\(.+:.+\):.+;\n)*\n*((?i)procedimiento .+\(.+:.+\);\n)*)*\n*(((?i)procedimiento .+\((.*(,.*)*:.+)*\)(:.+)*)\n^(?i)inicio\n(.*\n)*(?i)fin de procedimiento;\n*)*(((?i)funcion .+\((.*(,.*)*:.+)*\)(:.+)*)\n^(?i)inicio\n(.*\n)*(?i)fin de funcion;\n*)*(?i)programa\n(.*\n)*(?i)fin de programa.$ Complete rule
 RULES = ["^(?i)constantes .+:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n(.*:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n)*\n*^(?i)variables (.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)*(((?i)funcion .+\(.+:.+\):.+;\n)*((?i)procedimiento .+\(.+:.+\);\n)*)*"]
 RESERVED = {
     "constantes": 1,
