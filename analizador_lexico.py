@@ -1,6 +1,4 @@
-from email import header
 import ply.lex as lex
-from pprint import pprint
 from tabulate import tabulate
 
 # resultado del analisis
