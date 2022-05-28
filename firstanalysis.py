@@ -1,10 +1,13 @@
+from operator import contains
 from pprint import pprint
 import os
 import re
-#TODO agregar reglas para las funciones de (si,cuando,imprime,lee,sea,otro,hasta que,regresa,desde)
-#TODO remover comentarios por que no se poner el caso de ignorar en regex 
+
+# TODO agregar reglas para las funciones de (si,cuando,imprime,lee,sea,otro,hasta que,regresa,desde)
 #!^(?i)constantes .+:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n(.*:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n)*\n*^(?i)variables (.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)*(((?i)funcion .+\(.+:.+\):.+;\n)*\n*((?i)procedimiento .+\(.+:.+\);\n)*)*\n*(((?i)procedimiento .+\((.*(,.*)*:.+)*\)(:.+)*)\n^(?i)inicio\n(.*\n)*(?i)fin de procedimiento;\n*)*(((?i)funcion .+\((.*(,.*)*:.+)*\)(:.+)*)\n^(?i)inicio\n(.*\n)*(?i)fin de funcion;\n*)*(?i)programa\n(.*\n)*(?i)fin de programa.$ Complete rule
-RULES = ["^(?i)constantes .+:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n(.*:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n)*\n*^(?i)variables (.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)*(((?i)funcion .+\(.+:.+\):.+;\n)*((?i)procedimiento .+\(.+:.+\);\n)*)*"]
+RULES = [
+    "^(?i)constantes .+:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n(.*:=[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?;\n)*\n*^(?i)variables *(.+,|.+\[.+\],).+:.+;\n((.+,|.+\[.+\],).+:.+;\n)*(((?i)funcion .+\(.+:.+\):.+;\n)*\n*((?i)procedimiento .+\(.+:.+\);\n)*)*\n*(((?i)procedimiento .+\((.*(,.*)*:.+)*\)(:.+)*)\n^(?i)inicio\n(.*\n)*(?i)fin de procedimiento;\n*)*(((?i)funcion .+\((.*(,.*)*:.+)*\)(:.+)*)\n^(?i)inicio\n(.*\n)*(?i)fin de funcion;\n*)*(?i)programa\n(.*\n)*(?i)fin de programa.$"
+]
 RESERVED = {
     "constantes": 1,
     "variables": 1,
@@ -73,7 +76,7 @@ variable_table = {
     "separator": [],
     "number": [],
 }
-variable_types={"Alfabetico":"idk","Logico":"idk","Entero":"idk","Real":"idk"}
+variable_types = {"Alfabetico": "idk", "Logico": "idk", "Entero": "idk", "Real": "idk"}
 
 
 def get_word(symbol, line, position):
@@ -267,19 +270,20 @@ def write_files(table):
                 f.write(f"{element}\n")
 
 
-code = open("examen.up", "r").read().split("\n")
-code = [line + "\n" for line in code]
-for line in code:
-    pos = 0
-    if rule_validation(line, pos):
-        print("thx")
-        pass
-    while not pos == len(line):
-        word, pos = read_next(line, pos)
-        if word == "constantes":
-        if not word == "":
-            variable_table[categorize(word)].append(word)
-
+code = open("prueba.up", "r").read().split("\n")
+code = [line + "\n" for line in code if not "//" in line]
+raw_code = "".join(code)
+print(raw_code)
+gramatical_check = re.search(RULES[0], raw_code, re.MULTILINE)
+if gramatical_check:
+    for line in code:
+        pos = 0
+        while not pos == len(line):
+            word, pos = read_next(line, pos)
+            if not word == "":
+                variable_table[categorize(word)].append(word)
+else:
+    print("el lenguaje no es válido")
 # for key in variable_table.keys():
 #    print(key.capitalize())
 #    pprint(variable_table[key])
