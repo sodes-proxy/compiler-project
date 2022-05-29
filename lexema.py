@@ -1,3 +1,6 @@
+from re import L
+
+
 errores = []
 
 class Lexema:
@@ -10,42 +13,45 @@ class Lexema:
         return f"{self.value} of type {self.tipo} found in {self.line}"
 
 class Simbolo:
-    def __init__(self, nombre, clase, tipo, dimension1, dimension2, avg, alp=[], uso=[]):
+    def __init__(self, nombre, clase, tipo, dimension1, dimension2, uso='#'):
         self.nombre = nombre
         self.clase = clase
         self.tipo = tipo
         self.dimension1 = dimension1
         self.dimension2 = dimension2
-        self.alp = alp # Lista de Simbolos
-        self.uso = uso # Funciones
-
-        # Valor
-        if not avg == 0:
-            self.avg = avg
-        else:
-            if tipo == "ALFABETICO": self.avg = ''
-            elif tipo == "LOGICO": self.avg = True
-            else: self.avg = 0
-
-    def cambiar_valor(self, lexema):
-        if self.tipo == lexema.tipo: self.avg = lexema.value
-        else: errores.append(f"Error en linea {lexema.line}, tipo de dato distinto.")
+        self.alp = []
+        self.uso = uso
 
     def __repr__(self):
-        return f"{self.nombre}|{self.clase}|{self.tipo}|{self.dimension1}|{self.dimension2}|{self.avg}"
+        alp = ''
+        for sim in self.alp:
+            alp += f'{sim.clase},{sim.tipo},{sim.dimension1},{sim.dimension2},{sim.uso},'
+        return f'{self.nombre},{self.clase},{self.tipo},{self.dimension1},{self.dimension2},{alp}{self.uso}'
 
 class Tabla_Simbolos:
     def __init__(self):
         self.simbolos = dict()
         self.parametros = dict()
+        self.__etiqueta = 0
 
     def agregar(self, simbolo):
         self.simbolos[simbolo.nombre] = simbolo
 
-    def agregar_param(self, simbolo, funcion):
-        if funcion in self.parametros.keys(): self.parametros[funcion].append(simbolo)
-        else: self.parametros[funcion] = [simbolo]
+    def agregar_etiqueta(self, simbolo):
+        self.__etiqueta += 1
+        simbolo.nombre = "_E" + str(self.__etiqueta)
+        self.agregar(simbolo)
+
+    def agregar_param(self, simbolo):
+        if simbolo.nombre in self.simbolos.keys(): self.simbolos[simbolo.nombre].alp.append(simbolo)
+        else: 
+            self.agregar(Simbolo(simbolo.nombre, "I", "I", 0, 0))
+            self.agregar_param(simbolo)
 
     def buscar(self, name):
-        if name in self.simbolos.keys(): return self.simbolos[name].avg
-        else: return "Fail"
+        if name in self.simbolos.keys(): return self.simbolos[name]
+        else: return False
+
+    def print(self):
+        for sim in self.simbolos.keys():
+            print(self.simbolos[sim])

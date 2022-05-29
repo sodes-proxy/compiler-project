@@ -52,6 +52,12 @@ reservada = (
 )
 
 tokens = reservada + (
+    #region Logicos
+    'Y',
+    'O',
+    'NO',
+    #endregion
+
     'ASIGNACION',
     'IDENTIFICADOR',
     'COMENTARIO',
@@ -70,12 +76,6 @@ tokens = reservada + (
     'ENTRE',
     'MODULO',
     'EXPONENTE',
-    #endregion
-
-    #region Logicos
-    'Y',
-    'O',
-    'NO',
     #endregion
 
     #region Relacionales
@@ -255,6 +255,20 @@ def t_PROGRAMA_PUNTO(t):
     return t
 #endregion
 
+#region Logicos
+def t_Y(t): 
+    r'^y$'
+    return t
+
+def t_O(t):
+    r'^o$'
+    return t
+
+def t_NO(t): 
+    r'^no$'
+    return t
+#endregion
+
 t_ASIGNACION = r':='
 
 def t_IDENTIFICADOR(t):
@@ -275,15 +289,6 @@ t_MODULO = r'\%'
 def t_EXPONENTE(t):
     r'\^'
     return t
-#endregion
-
-#region Logicos
-def t_Y(t): 
-    r'y'
-    return t
-
-t_O = r'o'
-t_NO = r'no'
 #endregion
 
 #region Relacionales

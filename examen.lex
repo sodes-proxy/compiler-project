@@ -193,7 +193,7 @@
 | opc                                                        | <Ident>   |
 | <>                                                         | <OpRel>   |
 | "S"                                                        | <CteAlfa> |
-| y                                                          | <Ident>   |
+| y                                                          | <OpLog>   |
 | opc                                                        | <Ident>   |
 | <>                                                         | <OpRel>   |
 | "s"                                                        | <CteAlfa> |
@@ -211,7 +211,7 @@
 | opc                                                        | <Ident>   |
 | =                                                          | <OpRel>   |
 | "S"                                                        | <CteAlfa> |
-| o                                                          | <Ident>   |
+| o                                                          | <OpLog>   |
 | opc                                                        | <Ident>   |
 | =                                                          | <OpRel>   |
 | "s"                                                        | <CteAlfa> |
