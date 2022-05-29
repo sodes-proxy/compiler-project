@@ -1,5 +1,6 @@
 import ply.lex as lex
 from tabulate import tabulate
+from lexema import Lexema
 
 # resultado del analisis
 resultado_lexema = []
@@ -53,6 +54,7 @@ reservada = (
 tokens = reservada + (
     'ASIGNACION',
     'IDENTIFICADOR',
+    'COMENTARIO',
 
     #region Constantes
     'ENTERO',
@@ -259,6 +261,10 @@ def t_IDENTIFICADOR(t):
     r'^[A-Z][A-Z\d_]*$'
     return t
 
+def t_COMENTARIO(t):
+    r'^\/{2}.*$'
+    return t
+
 #region Aritmeticos
 t_MAS = r'\+'
 t_MENOS = r'-'
@@ -340,9 +346,7 @@ def prueba(data, line):
         tok = analizador.token()
         if not tok:
             break
-        # print("lexema de "+tok.type+" valor "+tok.value+" linea "tok.lineno)
-        estado = "Linea {:4} Tipo {:16} Valor {:16} Posicion {:4}".format(str(line),str(tok.type) ,str(tok.value), str(tok.lexpos) )
-        resultado_lexema.append(estado)
+        resultado_lexema.append(Lexema(line, str(tok.type), str(tok.value)))
         libreria_lexema.append([str(tok.type), str(tok.value)])
     return resultado_lexema
 
@@ -358,6 +362,11 @@ def get_words(line):
         if not flag_str:
             if len(temp_word) < 2 and temp_word in terminadores:
                 test = temp_word + c
+                if test == "//":
+                    temp_word = line[pos - 1:]
+                    words.append(temp_word)
+                    break
+            
                 if test in term_largos: 
                     words.append(test)
                     temp_word = ''
@@ -415,12 +424,13 @@ def write_lex_file(filename):
     file.close()
     
 
-if __name__ == '__main__':
-    filename = "examen"
-
+def lexical_analizer(filename):
+    global resultado_lexema
     data = open(filename + ".up").read().split("\n")
     for pos, line in enumerate(data):
         for word in get_words(line):
             prueba(word, pos+1)
     
     write_lex_file(filename)
+
+    return resultado_lexema

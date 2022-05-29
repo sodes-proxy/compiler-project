@@ -117,16 +117,7 @@
 | Entero                                                     | <PalRes>  |
 | )                                                          | <Delim>   |
 | ;                                                          | <Delim>   |
-| /                                                          | <OpArit>  |
-| /                                                          | <OpArit>  |
-| Procedimiento                                              | <PalRes>  |
-| ImpMat                                                     | <Ident>   |
-| (                                                          | <Delim>   |
-| K                                                          | <Ident>   |
-| :                                                          | <Delim>   |
-| Entero                                                     | <PalRes>  |
-| )                                                          | <Delim>   |
-| ;                                                          | <Delim>   |
+| //Procedimiento ImpMat(K:Entero);                          | <Error>   |
 | Procedimiento                                              | <PalRes>  |
 | Selecciona                                                 | <Ident>   |
 | (                                                          | <Delim>   |

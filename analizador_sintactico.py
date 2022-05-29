@@ -1,179 +1,223 @@
-import ply.yacc as yacc
-from analizador_lexico import tokens
-from analizador_lexico import analizador
+from lexema import Simbolo, Tabla_Simbolos
 
-# resultado del analisis
-resultado_gramatica = []
 
-precedence = (
-    ('right','ASIGNAR'),
-    ('left', 'SUMA', 'RESTA'),
-    ('left', 'MULT', 'DIV'),
-    ('right', 'UMINUS'),
-)
-nombres = {}
+BLOQUES = {"TIPO_CONSTANTES":"CONSTANTE", "TIPO_VARIABLES":"VARIABLE", "FUNCION": "FUNC", "PROCEDIMIENTO":"PROC", "INICIO": "BLOQUE"}
+TIPOS = {"TIPO_ENTERO":"ENTERO", "TIPO_REAL":"REAL", "TIPO_ALFABETICO":"ALFABETICO", "TIPO_LOGICO":"LOGICO"}
 
-def p_declaracion_asignar(t):
-    'declaracion : IDENTIFICADOR ASIGNAR expresion PUNTOCOMA'
-    nombres[t[1]] = t[3]
+tabla = Tabla_Simbolos()
 
-def p_declaracion_expr(t):
-    'declaracion : expresion'
-    # print("Resultado: " + str(t[1]))
-    t[0] = t[1]
+def variable_ident(texto, temp_lex, pos, tipo, guardar=True, funcion='', local=''):
+    global tabla
 
-def p_expresion_operaciones(t):
-    '''
-    expresion  :   expresion SUMA expresion
-                |   expresion RESTA expresion
-                |   expresion MULT expresion
-                |   expresion DIV expresion
-                |   expresion POTENCIA expresion
-                |   expresion MODULO expresion
+    flag = True
+    if "CORIZQ" in texto:
+        if texto == "IDENTIFICADOR CORIZQ IDENTIFICADOR CORDER CORIZQ IDENTIFICADOR CORDER ":
+            if guardar: 
+                dim1 = tabla.buscar(temp_lex[pos + 2].value)
+                dim2 = tabla.buscar(temp_lex[pos + 5].value)
+                if dim1 == "Fail" or dim2 == "Fail": flag = False
+                else:
+                    if funcion: tabla.agregar_param(Simbolo(temp_lex[pos + 0].value, "PARAMETRO", tipo, dim1, dim2, 0), funcion)
+                    else: tabla.agregar(Simbolo(temp_lex[pos + 0].value, "VARIABLE", tipo, dim1, dim2, 0))
+        elif texto == "IDENTIFICADOR CORIZQ ENTERO CORDER CORIZQ ENTERO CORDER ": 
+            if guardar: 
+                if funcion: tabla.agregar_param(Simbolo(temp_lex[pos + 0].value, "PARAMETRO", tipo, temp_lex[pos + 2].value, temp_lex[pos + 5].value, 0), funcion)
+                else: tabla.agregar(Simbolo(temp_lex[pos + 0].value, "VARIABLE", tipo, temp_lex[pos + 2].value, temp_lex[pos + 5].value, 0))
+        elif texto == "IDENTIFICADOR CORIZQ ENTERO CORDER CORIZQ IDENTIFICADOR CORDER ": 
+            if guardar:
+                dim2 = tabla.buscar(temp_lex[pos + 5].value)
+                if dim2 == "Fail": flag = False
+                else:
+                    if funcion: tabla.agregar_param(Simbolo(temp_lex[pos + 0].value, "PARAMETRO", tipo, temp_lex[pos + 2], dim2, 0), funcion)
+                    else: tabla.agregar(Simbolo(temp_lex[pos + 0].value, "VARIABLE", tipo, temp_lex[pos + 2], dim2, 0))
+        elif texto == "IDENTIFICADOR CORIZQ IDENTIFICADOR CORDER CORIZQ ENTERO CORDER ": 
+            if guardar:
+                dim1 = tabla.buscar(temp_lex[pos + 2].value)
+                if dim1 == "Fail": flag = False
+                else:
+                    if funcion: tabla.agregar_param(Simbolo(temp_lex[pos + 0].value, "PARAMETRO", tipo, dim1, temp_lex[pos + 5], 0), funcion)
+                    else: tabla.agregar(Simbolo(temp_lex[pos + 0].value, "VARIABLE", tipo, dim1, temp_lex[pos + 5], 0))
+        elif texto == "IDENTIFICADOR CORIZQ IDENTIFICADOR CORDER ":
+            if guardar:
+                dim1 = tabla.buscar(temp_lex[pos + 2].value)
+                if dim1 == "Fail": flag = False
+                else:
+                    if funcion: tabla.agregar_param(Simbolo(temp_lex[pos + 0].value, "PARAMETRO", tipo, dim1, 0, 0), funcion)
+                    else: tabla.agregar(Simbolo(temp_lex[pos + 0].value, "VARIABLE", tipo, dim1, 0, 0))
+        elif texto == "IDENTIFICADOR CORIZQ ENTERO CORDER ": 
+            if guardar: 
+                if funcion: tabla.agregar_param(Simbolo(temp_lex[pos + 0].value, "PARAMETRO", tipo, temp_lex[pos + 2], 0, 0), funcion)
+                else: tabla.agregar(Simbolo(temp_lex[pos + 0].value, "VARIABLE", tipo, temp_lex[pos + 2], 0, 0))
+        else: flag = False
+    elif texto == "IDENTIFICADOR ": 
+        if guardar: 
+            if funcion: tabla.agregar_param(Simbolo(temp_lex[pos + 0].value, "PARAMETRO", tipo, 0, 0, 0), funcion)
+            else: tabla.agregar(Simbolo(temp_lex[pos + 0].value, "VARIABLE", tipo, 0, 0, 0))
+    else: flag = False
 
-    '''
-    if t[2] == '+':
-        t[0] = t[1] + t[3]
-    elif t[2] == '-':
-        t[0] = t[1] - t[3]
-    elif t[2] == '*':
-        t[0] = t[1] * t[3]
-    elif t[2] == '/':
-        t[0] = t[1] / t[3]
-    elif t[2] == '%':
-        t[0] = t[1] % t[3]
-    elif t[2] == '**':
-        i = t[3]
-        t[0] = t[1]
-        while i > 1:
-            t[0] *= t[1]
-            i -= 1
+    return flag
 
-def p_expresion_uminus(t):
-    'expresion : RESTA expresion %prec UMINUS'
-    t[0] = -t[2]
+def asignar_constantes(op, lex, guardar=True, esLocal=False):
+    global tabla
 
-def p_expresion_grupo(t):
-    '''
-    expresion  : PARIZQ expresion PARDER
-                | LLAIZQ expresion LLADER
-                | CORIZQ expresion CORDER
-    '''
-    t[0] = t[2]
-# sintactico de expresiones logicas
-def p_expresion_logicas(t):
-    '''
-    expresion   :  expresion MENORQUE expresion 
-                |  expresion MAYORQUE expresion 
-                |  expresion MENORIGUAL expresion 
-                |   expresion MAYORIGUAL expresion 
-                |   expresion IGUAL expresion 
-                |   expresion DISTINTO expresion
-                |  PARIZQ expresion PARDER MENORQUE PARIZQ expresion PARDER
-                |  PARIZQ expresion PARDER MAYORQUE PARIZQ expresion PARDER
-                |  PARIZQ expresion PARDER MENORIGUAL PARIZQ expresion PARDER 
-                |  PARIZQ  expresion PARDER MAYORIGUAL PARIZQ expresion PARDER
-                |  PARIZQ  expresion PARDER IGUAL PARIZQ expresion PARDER
-                |  PARIZQ  expresion PARDER DISTINTO PARIZQ expresion PARDER
-    '''
-    if t[2] == "<": t[0] = t[1] < t[3]
-    elif t[2] == ">": t[0] = t[1] > t[3]
-    elif t[2] == "<=": t[0] = t[1] <= t[3]
-    elif t[2] == ">=": t[0] = t[1] >= t[3]
-    elif t[2] == "==": t[0] = t[1] is t[3]
-    elif t[2] == "!=": t[0] = t[1] != t[3]
-    elif t[3] == "<":
-        t[0] = t[2] < t[4]
-    elif t[2] == ">":
-        t[0] = t[2] > t[4]
-    elif t[3] == "<=":
-        t[0] = t[2] <= t[4]
-    elif t[3] == ">=":
-        t[0] = t[2] >= t[4]
-    elif t[3] == "==":
-        t[0] = t[2] is t[4]
-    elif t[3] == "!=":
-        t[0] = t[2] != t[4]
+    if op == "IDENTIFICADOR ASIGNACION REAL PUNTOCOMA ": 
+        if guardar: tabla.agregar(Simbolo(lex[0].value, "CONSTANTE", "REAL", 0, 0, lex[2].value))
+    elif op == "IDENTIFICADOR ASIGNACION ENTERO PUNTOCOMA ": 
+        if guardar: tabla.agregar(Simbolo(lex[0].value, "CONSTANTE", "ENTERO", 0, 0, lex[2].value))
+    elif op == "IDENTIFICADOR ASIGNACION LOGICO PUNTOCOMA ": 
+        if guardar: tabla.agregar(Simbolo(lex[0].value, "CONSTANTE", "LOGICO", 0, 0, lex[2].value))
+    elif op == "IDENTIFICADOR ASIGNACION ALFABETICO PUNTOCOMA ":
+        if guardar: tabla.agregar(Simbolo(lex[0].value, "CONSTANTE", "ALFABETICO", 0, 0, lex[2].value))
+    else: return False
+    return True
 
-    # print('logica ',[x for x in t])
+def asignar_variables(op, lex, funcion='', local=''):
+    global tabla
 
-# gramatica de expresiones booleanadas
-def p_expresion_booleana(t):
-    '''
-    expresion   :   expresion AND expresion 
-                |   expresion OR expresion 
-                |   expresion NOT expresion 
-                |  PARIZQ expresion AND expresion PARDER
-                |  PARIZQ expresion OR expresion PARDER
-                |  PARIZQ expresion NOT expresion PARDER
-    '''
-    if t[2] == "&&":
-        t[0] = t[1] and t[3]
-    elif t[2] == "||":
-        t[0] = t[1] or t[3]
-    elif t[2] == "!":
-        t[0] =  t[1] is not t[3]
-    elif t[3] == "&&":
-        t[0] = t[2] and t[4]
-    elif t[3] == "||":
-        t[0] = t[2] or t[4]
-    elif t[3] == "!":
-        t[0] =  t[2] is not t[4]
+    flag = True
+    if "DOSPUNTOS" in op:
+        info = op.split("DOSPUNTOS ")
+        if info[1] in [f"{key} PUNTOCOMA " for key in TIPOS.keys()]:
+            tipo = TIPOS[info[1].split(" ")[0]]
+            if "COMA" in info[0]:
+                variables = info[0].split("COMA ")
+                current = 0
+                for variable in variables:
+                    if not variable_ident(variable, lex, current, tipo, funcion=funcion, local=local): flag = False
+                    current += len(variable.split(" "))
+            else: 
+                if not variable_ident(info[0], lex, 0, tipo, funcion=funcion, local=local): flag = False
+        else: flag = False
+    else: flag = False
+    return flag
 
-def p_expresion_numero(t):
-    'expresion : ENTERO'
-    t[0] = t[1]
+def asignar_func(op, lex, guardar=True):
+    global tabla
 
-def p_expresion_cadena(t):
-    'expresion : COMDOB expresion COMDOB'
-    t[0] = t[2]
-
-def p_expresion_nombre(t):
-    'expresion : IDENTIFICADOR'
-    try:
-        t[0] = nombres[t[1]]
-    except LookupError:
-        print("Nombre desconocido ", t[1])
-        t[0] = 0
-
-def p_error(t):
-    global resultado_gramatica
-    if t:
-        resultado = "Error sintactico de tipo {} en el valor {}".format( str(t.type),str(t.value))
-        print(resultado)
+    flag = True
+    if op in [f"IDENTIFICADOR PARIZQ PARDER DOSPUNTOS {key} PUNTOCOMA " for key in TIPOS.keys()]: 
+        if guardar: tabla.agregar(Simbolo(lex[0], "FUNCION", lex[-2], 0, 0, 0))
+    elif op in [f"FUNCION IDENTIFICADOR PARIZQ PARDER DOSPUNTOS {key} PUNTOCOMA " for key in TIPOS.keys()]: 
+        if guardar: tabla.agregar(Simbolo(lex[1], "FUNCION", lex[-2], 0, 0, 0))
     else:
-        resultado = "Error sintactico {}".format(t)
-        print(resultado)
-    resultado_gramatica.append(resultado)
+        info1 = op.split("PARIZQ IDENTIFICADOR")
+        info2 = info1[1].split("PARDER DOSPUNTOS")
+        inicio = info1[0] + "PARIZQ "
+        medio = "IDENTIFICADOR" + info2[0] + "PUNTOCOMA "
+        final = "PARDER DOSPUNTOS" + info2[1]
+
+        if inicio.split(" ")[0] == "FUNCION": 
+            param_start = 3
+            nombre = lex[1].value
+        else: 
+            param_start = 2
+            nombre = lex[0].value
+
+        simbol = Simbolo(nombre, 'FUNCION', lex[-2].value, 0, 0, 0)
+        
+        if not inicio in ["FUNCION IDENTIFICADOR PARIZQ ", "IDENTIFICADOR PARIZQ "]:
+            print("Error P")
+            flag = False
+        elif not asignar_variables(medio, lex[param_start:], funcion=simbol.nombre):
+            print("Error M")
+            flag = False
+        elif final not in [f"PARDER DOSPUNTOS {key} PUNTOCOMA " for key in TIPOS.keys()]: 
+            print("Error F")
+            flag = False
+
+        if flag and guardar:
+            tabla.agregar(simbol)
+    return flag
+
+def asignar_proc(op, lex, guardar=True):
+    global tabla
+
+    flag = True
+    if op == "IDENTIFICADOR PARIZQ PARDER PUNTOCOMA ":
+        if guardar: tabla.agregar(Simbolo(lex[0], "PROCEDIMIENTO", "NONE", 0, 0, 0))
+    elif op == "PROCEDIMIENTO IDENTIFICADOR PARIZQ PARDER PUNTOCOMA ":
+        if guardar: tabla.agregar(Simbolo(lex[1], "PROCEDIMIENTO", "NONE", 0, 0, 0))
+    else:
+        info1 = op.split("PARIZQ IDENTIFICADOR")
+        info2 = info1[1].split("PARDER PUNTOCOMA")
+        inicio = info1[0] + "PARIZQ "
+        medio = "IDENTIFICADOR" + info2[0] + "PUNTOCOMA "
+        final = "PARDER PUNTOCOMA" + info2[1] 
+
+        if inicio.split(" ")[0] == "PROCEDIMIENTO": 
+            param_start = 3
+            nombre = lex[1].value
+        else: 
+            param_start = 2
+            nombre = lex[0].value
+
+        simbol = Simbolo(nombre, 'PROCEDIMIENTO', 'NONE', 0, 0, 0)
+
+        if not inicio in ["PROCEDIMIENTO IDENTIFICADOR PARIZQ ", "IDENTIFICADOR PARIZQ "]:
+            print("Error P")
+            flag = False
+        elif not asignar_variables(medio, lex[param_start:], funcion=simbol.nombre): 
+            print("Error M")
+            flag = False
+        elif final not in [f"PARDER PUNTOCOMA "]: 
+            print("Error F")
+            flag = False
+
+        if flag and guardar:
+            tabla.agregar(simbol)
+    return flag
 
 
+def find_op(op, lex_op, operation):    
+    for pos in range(len(op)):
+        temp_op = op[pos]
+        temp_lex = lex_op[pos]
+        #print([temp_op])
 
-# instanciamos el analizador sistactico
-parser = yacc.yacc()
+        if operation == "CONSTANTE": asignar_constantes(temp_op, temp_lex)
+        elif operation == "VARIABLE": asignar_variables(temp_op, temp_lex)
+        elif operation == "FUNC": asignar_func(temp_op, temp_lex)
+        elif operation == "PROC": asignar_proc(temp_op, temp_lex)            
 
-def prueba_sintactica(data):
-    global resultado_gramatica
-    resultado_gramatica.clear()
+def sintactic_analyzer(lexemas):
+    global tabla
 
-    for item in data.splitlines():
-        if item:
-            gram = parser.parse(item)
-            if gram:
-                resultado_gramatica.append(str(gram))
-        else: print("data vacia")
+    lines = dict()
+    for lexema in lexemas:
+        if lexema.line not in lines.keys():
+            lines[lexema.line] = []
+        
+        lines[lexema.line].append(lexema)
 
-    print("result: ", resultado_gramatica)
-    return resultado_gramatica
+    past_op = ""
+    current_op = ""
 
-if __name__ == '__main__':
-    while True:
-        try:
-            s = input(' ingresa dato >>> ')
-        except EOFError:
-            continue
-        if not s: continue
+    op = []
+    lex_op = []
+    for key in lines.keys():
+        temp_op = ''
+        temp_lex = []
+        if key in range(1, 20):
+            for lex in lines[key]:
+                if lex.tipo == "TAB" or lex.tipo == "COMENTARIO": continue
 
-        # gram = parser.parse(s)
-        # print("Resultado ", gram)
-
-        prueba_sintactica(s)
+                if lex.tipo in BLOQUES.keys():
+                    current_op = BLOQUES[lex.tipo]
+                    
+                if not past_op == current_op:
+                    if not current_op == "BLOQUE":
+                        find_op(op, lex_op, past_op)
+                        op = []
+                        lex_op = []
+                    else:
+                        find_op(op[:-1], lex_op[:-1], past_op)
+                        op = [op[-1]]
+                        lex_op = [lex_op[-1]]
+                        op = []
+                        lex_op = []
+                    past_op = current_op
+                else:    
+                    temp_op += f"{lex.tipo} "
+                    temp_lex.append(lex)
+        if temp_op: op.append(temp_op)
+        if temp_lex: lex_op.append(temp_lex)
